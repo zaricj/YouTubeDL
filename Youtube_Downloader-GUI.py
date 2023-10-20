@@ -16,41 +16,42 @@ update_queue = queue.Queue()
 
 def download_youtube_video(YouTubeURL, output_path):
     try:
+        window["-PBAR-"].update(0)
         def progress_callback(stream, chunk, remaining_bytes):
             total_size = stream.filesize
             bytes_downloaded = total_size - remaining_bytes
             percentage = (bytes_downloaded / total_size) * 100
             progress_text = f"Downloaded {bytes_downloaded}/{total_size}\n"
             
-            window["-OUTPUT_WINDOW-"].update(progress_text)
+            # window["-OUTPUT_WINDOW-"].update(progress_text)
             window["-PBAR-"].update(percentage)
-
+            
+        window["-OUTPUT_WINDOW-"].print("Starting download...please wait.\n")
         yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
-        video = yt.streams.get_by_resolution(values["-VIDEO_QUALITY-"])
-        if len(values["-VIDEO_QUALITY-"]) is not 0:
-            download_video = video.download(output_path=output_path)
-            base,extension = os.path.splitext(download_video)
-            new_video_filename = base + ".mp4"
-            os.rename(download_video,new_video_filename)
-            window["-OUTPUT_WINDOW-"].print(f"{yt.title}\nhas been successfully downloaded.\nSaved in {output_path}")
-        else:
-            window["-OUTPUT_WINDOW-"].print("Failed. Choose a Quality Preset.")
+        video = yt.streams.get_highest_resolution()
+        download_video = video.download(output_path=output_path)
+        base,extension = os.path.splitext(download_video)
+        new_video_filename = base + ".mp4"
+        os.rename(download_video,new_video_filename)
+        window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {video.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
     
     except Exception as e:
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
         
 def download_youtube_audio(YouTubeURL, output_path):
     try:
+        window["-PBAR-"].update(0)
         def progress_callback(stream, chunk, remaining_bytes):
             total_size = stream.filesize
             bytes_downloaded = total_size - remaining_bytes
             percentage = (bytes_downloaded / total_size) * 100
             progress_text = f"Downloaded {bytes_downloaded}/{total_size}\n"
             
-            window["-OUTPUT_WINDOW-"].update(progress_text)
+            #window["-OUTPUT_WINDOW-"].update(progress_text)
             window["-PBAR-"].update(percentage)
-           
+            
+        window["-OUTPUT_WINDOW-"].print("Starting download...please wait.\n") 
         yt = YouTube(YouTubeURL, use_oauth=False,allow_oauth_cache=True,on_progress_callback=progress_callback)
         
         music = yt.streams.get_audio_only()
@@ -58,7 +59,7 @@ def download_youtube_audio(YouTubeURL, output_path):
         base,extension = os.path.splitext(download_music)
         new_music_filename = base + ".mp3"
         os.rename(download_music,new_music_filename)
-        window["-OUTPUT_WINDOW-"].print(f"{yt.title}\nhas been successfully downloaded.\nSaved in {output_path}")
+        window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {music.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
         
     except Exception as e:
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
@@ -103,9 +104,6 @@ sg.theme_add_new('MyRed', my_new_theme)
 # Switch your theme to use the newly added one. You can add spaces to make it more readable
 sg.theme("MyRed")
 
-audio_quality_list = [""]
-video_quality_list = [""]
-
 #====== GUI LAYOUT ======#
 column_description = [[sg.Text("YouTube Downloader", font="Arial 20 bold underline",text_color="#c63a3d")],
                       [sg.Text("A YouTube Downloader built with Python and PySimpleGUI.")],
@@ -115,16 +113,14 @@ column_description = [[sg.Text("YouTube Downloader", font="Arial 20 bold underli
 
 column_video_downloader = [[sg.Text("Video Download", font="Arial 20 bold underline",text_color="#c63a3d")],
                            [sg.Text("This input is used for Video downloading:")],
-                           [sg.Text("Enter URL Link"),sg.Input(key="-VIDEO_INPUT-"),sg.Button("Download", key="-BUTTON_DOWNLOAD_VIDEO-")],
-                           [sg.Text("Choose Quality:"),sg.Combo(video_quality_list,size=(10,1),key="-VIDEO_QUALITY-"),sg.Button("Get Stream",key="-VIDEO_STREAM_BUTTON-")]]
+                           [sg.Text("Enter URL Link"),sg.Input(key="-VIDEO_INPUT-",size=(33,1)),sg.Button("Download", key="-BUTTON_DOWNLOAD_VIDEO-"),sg.Button("Stream Info",key="-VIDEO_STREAM_BUTTON-")]]
 
 column_audio_downloader = [[sg.Text("Audio Download", font="Arial 20 bold underline",text_color="#c63a3d")],
                            [sg.Text("This input is used for Audio downloading:")],
-                           [sg.Text("Enter URL Link"),sg.Input(key="-AUDIO_INPUT-"),sg.Button("Download", key="-BUTTON_DOWNLOAD_AUDIO-")],
-                           [sg.Text("Choose Quality:"),sg.Combo(audio_quality_list,size=(10,1),key="-AUDIO_QUALITY-"),sg.Button("Get Stream",key="-AUDIO_STREAM_BUTTON-")]]
+                           [sg.Text("Enter URL Link"),sg.Input(key="-AUDIO_INPUT-",size=(33,1)),sg.Button("Download", key="-BUTTON_DOWNLOAD_AUDIO-"),sg.Button("Stream Info",key="-AUDIO_STREAM_BUTTON-")]]
 
 column_output_and_progressbar = [[sg.Multiline(size=(65,10),key="-OUTPUT_WINDOW-")],
-                        [sg.Text("Progress:"),sg.ProgressBar(100,size=(45,25),key="-PBAR-"),sg.Button("Exit", key="-EXIT-", size=(7,1)),sg.Button("Clear",size=(7,1), key="-CLEAR_OUTPUT-")]]
+                                [sg.Text("Progress:"),sg.ProgressBar(100,size=(45,25),key="-PBAR-"),sg.Button("Exit", key="-EXIT-", size=(7,1)),sg.Button("Clear",size=(7,1), key="-CLEAR_OUTPUT-")]]
 
 layout = [[sg.Column(column_description)],
           [sg.HSeparator()],
@@ -139,7 +135,6 @@ window = sg.Window("YouTube Downloader",layout,font="Arial 16",finalize=True)
 while True:
     
     event,values = window.read()
-    print(f"Event: {event} | Values: {values}")
     
         #----Closing the programm with either option the [X] or just by pressing "Exit"----#
     if (event == sg.WIN_CLOSED or event == "-EXIT-"):
@@ -153,7 +148,6 @@ while True:
         else:
             download_thread = threading.Thread(target=download_youtube_video, args=(values["-VIDEO_INPUT-"], values["-SAVE_TO_FOLDER-"]))
             download_thread.start()
-            #window.perform_long_operation(lambda:download_youtube_video(YouTubeURL = values["-VIDEO_INPUT-"],output_path = values["-SAVE_TO_FOLDER-"]),"-OUTPUT_WINDOW-")
         
     elif event == "-BUTTON_DOWNLOAD_AUDIO-":
         if len(values["-SAVE_TO_FOLDER-"]) == 0:
@@ -163,18 +157,21 @@ while True:
         else:
            download_thread = threading.Thread(target=download_youtube_audio, args=(values["-AUDIO_INPUT-"], values["-SAVE_TO_FOLDER-"]))
            download_thread.start()
-            #window.perform_long_operation(lambda:download_youtube_audio(YouTubeURL = values["-AUDIO_INPUT-"],output_path = values["-SAVE_TO_FOLDER-"]),"-OUTPUT_WINDOW-")
     
     elif event == "-VIDEO_STREAM_BUTTON-":
-        if len(values["-VIDEO_INPUT-"]):
+        if len(values["-VIDEO_INPUT-"]) > 0:
             get_video_stream_thread = threading.Thread(target=video_stream, args=(values["-VIDEO_INPUT-"],))
             get_video_stream_thread.start()
+        else:
+            window["-OUTPUT_WINDOW-"].print("ERROR: Cannot get info of Video Stream because input is empty.")
 
     elif event == "-AUDIO_STREAM_BUTTON-":
-        if len(values["-AUDIO_INPUT-"]):
+        if len(values["-AUDIO_INPUT-"]) > 0:
             get_audio_stream_thread = threading.Thread(target=audio_stream, args=(values["-AUDIO_INPUT-"],))
             get_audio_stream_thread.start()
-            
+        else:
+            window["-OUTPUT_WINDOW-"].print("ERROR: Cannot get info of Audio Stream because input is empty.")
+                     
     elif event == "-CLEAR_OUTPUT-":
             window["-OUTPUT_WINDOW-"].update("")
             window["-PBAR-"].update(0)
