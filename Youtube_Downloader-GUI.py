@@ -72,8 +72,6 @@ def video_stream(YouTubeURL):
     resolutions = [stream.resolution for stream in video_streams]  # Collect resolutions in a list
     for stream in video_streams:
         window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
-    # Update the "-VIDEO_QUALITY-" combo element with the resolutions list
-    window["-VIDEO_QUALITY-"].update(values=resolutions)
 
 def audio_stream(YouTubeURL):
     yt = YouTube(YouTubeURL)
@@ -83,8 +81,6 @@ def audio_stream(YouTubeURL):
     abrs = [stream.abr for stream in audio_streams]  # Collect audio quality (abr) in a list
     for stream in audio_streams:
         window["-OUTPUT_WINDOW-"].print(f"Abr: {stream.abr}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
-    # Update the "-AUDIO_QUALITY-" combo element with the abrs list
-    window["-AUDIO_QUALITY-"].update(values=abrs)
 
 #====== GUI Theme ======#
 my_new_theme = {'BACKGROUND': '#1c1e23',
