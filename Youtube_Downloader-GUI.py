@@ -27,12 +27,15 @@ def download_youtube_video(YouTubeURL, output_path):
 
         yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
-        video = yt.streams.filter(file_extension="mp4")
-        download_video = video.download(output_path=output_path)
-        base,extension = os.path.splitext(download_video)
-        new_video_filename = base + ".mp4"
-        os.rename(download_video,new_video_filename)
-        window["-OUTPUT_WINDOW-"].print(f"{yt.title}\nhas been successfully downloaded.\nSaved in {output_path}")
+        video = yt.streams.get_by_resolution(values["-VIDEO_QUALITY-"])
+        if len(values["-VIDEO_QUALITY-"]) is not 0:
+            download_video = video.download(output_path=output_path)
+            base,extension = os.path.splitext(download_video)
+            new_video_filename = base + ".mp4"
+            os.rename(download_video,new_video_filename)
+            window["-OUTPUT_WINDOW-"].print(f"{yt.title}\nhas been successfully downloaded.\nSaved in {output_path}")
+        else:
+            window["-OUTPUT_WINDOW-"].print("Failed. Choose a Quality Preset.")
     
     except Exception as e:
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
@@ -45,15 +48,12 @@ def download_youtube_audio(YouTubeURL, output_path):
             percentage = (bytes_downloaded / total_size) * 100
             progress_text = f"Downloaded {bytes_downloaded}/{total_size}\n"
             
-            while bytes_downloaded < total_size:
-                window["-OUTPUT_WINDOW-"].update(progress_text)
-                window["-PBAR-"].update(0,max=100) # Sets the max_value of pg.Progressbar to the length of the predefined package list
-                print("debug")
-                window["-PBAR-"].update(current_count= 0 + percentage) # Updates the progress bar step by step with the length of the predefined package list
-            
+            window["-OUTPUT_WINDOW-"].update(progress_text)
+            window["-PBAR-"].update(percentage)
+           
         yt = YouTube(YouTubeURL, use_oauth=False,allow_oauth_cache=True,on_progress_callback=progress_callback)
         
-        music = yt.streams.filter(only_audio=True).first()
+        music = yt.streams.get_audio_only()
         download_music = music.download(output_path=output_path)
         base,extension = os.path.splitext(download_music)
         new_music_filename = base + ".mp3"
@@ -67,7 +67,7 @@ def video_stream(YouTubeURL):
     yt = YouTube(YouTubeURL)
     window["-OUTPUT_WINDOW-"].print(f"Video Title: {yt.title}")
     window["-OUTPUT_WINDOW-"].print("Available Video Streams: Loading... please wait.")
-    video_streams = yt.streams.filter(only_video=True, progressive=False, subtype="mp4").all()
+    video_streams = yt.streams.filter(only_video=True, progressive=False, subtype="mp4")
     resolutions = [stream.resolution for stream in video_streams]  # Collect resolutions in a list
     for stream in video_streams:
         window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
@@ -76,9 +76,9 @@ def video_stream(YouTubeURL):
 
 def audio_stream(YouTubeURL):
     yt = YouTube(YouTubeURL)
-    window["-OUTPUT_WINDOW-"].print(f"Video Title:{yt.title}")
+    window["-OUTPUT_WINDOW-"].print(f"Video Title: {yt.title}")
     window["-OUTPUT_WINDOW-"].print("Available Audio Streams: Loading... please wait.")
-    audio_streams = yt.streams.filter(only_audio=True, progressive=False).all()
+    audio_streams = yt.streams.filter(only_audio=True, progressive=False)
     abrs = [stream.abr for stream in audio_streams]  # Collect audio quality (abr) in a list
     for stream in audio_streams:
         window["-OUTPUT_WINDOW-"].print(f"Abr: {stream.abr}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
@@ -139,6 +139,7 @@ window = sg.Window("YouTube Downloader",layout,font="Arial 16",finalize=True)
 while True:
     
     event,values = window.read()
+    print(f"Event: {event} | Values: {values}")
     
         #----Closing the programm with either option the [X] or just by pressing "Exit"----#
     if (event == sg.WIN_CLOSED or event == "-EXIT-"):
