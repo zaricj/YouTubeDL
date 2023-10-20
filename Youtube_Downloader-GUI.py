@@ -1,11 +1,7 @@
 import PySimpleGUI as sg
 from pytube import YouTube
-from pytube.query import StreamQuery
 import threading
 import queue
-from os import listdir
-from os.path import isfile, join
-import os
 
 #====== Variables ======#
 
@@ -17,6 +13,7 @@ update_queue = queue.Queue()
 def download_youtube_video(YouTubeURL, output_path):
     try:
         window["-PBAR-"].update(0)
+        window["-OUTPUT_WINDOW-"].update("")
         def progress_callback(stream, chunk, remaining_bytes):
             total_size = stream.filesize
             bytes_downloaded = total_size - remaining_bytes
@@ -26,22 +23,26 @@ def download_youtube_video(YouTubeURL, output_path):
             # window["-OUTPUT_WINDOW-"].update(progress_text)
             window["-PBAR-"].update(percentage)
             
-        window["-OUTPUT_WINDOW-"].print("Starting download...please wait.\n")
+        window["-BUTTON_DOWNLOAD_VIDEO-"].update(disabled=True)
+        window["-VIDEO_STREAM_BUTTON-"].update(disabled=True)
+        window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n")
         yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
         video = yt.streams.get_highest_resolution()
-        download_video = video.download(output_path=output_path)
-        base,extension = os.path.splitext(download_video)
-        new_video_filename = base + ".mp4"
-        os.rename(download_video,new_video_filename)
+        video.download(output_path=output_path, skip_existing=True)
         window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {video.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
-    
+        window["-BUTTON_DOWNLOAD_VIDEO-"].update(disabled=False)
+        window["-VIDEO_STREAM_BUTTON-"].update(disabled=False)
     except Exception as e:
+        window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
+        window["-BUTTON_DOWNLOAD_VIDEO-"].update(disabled=False)
+        window["-VIDEO_STREAM_BUTTON-"].update(disabled=False)
         
 def download_youtube_audio(YouTubeURL, output_path):
     try:
         window["-PBAR-"].update(0)
+        window["-OUTPUT_WINDOW-"].update("")
         def progress_callback(stream, chunk, remaining_bytes):
             total_size = stream.filesize
             bytes_downloaded = total_size - remaining_bytes
@@ -50,19 +51,23 @@ def download_youtube_audio(YouTubeURL, output_path):
             
             #window["-OUTPUT_WINDOW-"].update(progress_text)
             window["-PBAR-"].update(percentage)
-            
-        window["-OUTPUT_WINDOW-"].print("Starting download...please wait.\n") 
+        
+        values["-BUTTON_DOWNLOAD_AUDIO-"].update(disabled=True)
+        window["-AUDIO_STREAM_BUTTON-"].update(disabled=True)
+        window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n") 
         yt = YouTube(YouTubeURL, use_oauth=False,allow_oauth_cache=True,on_progress_callback=progress_callback)
         
         music = yt.streams.get_audio_only()
-        download_music = music.download(output_path=output_path)
-        base,extension = os.path.splitext(download_music)
-        new_music_filename = base + ".mp3"
-        os.rename(download_music,new_music_filename)
+        music.download(output_path=output_path,skip_existing=True)
         window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {music.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
+        window["-BUTTON_DOWNLOAD_AUDIO-"].update(disabled=False)
+        window["-AUDIO_STREAM_BUTTON-"].update(disabled=False)
         
     except Exception as e:
+        window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
+        window["-BUTTON_DOWNLOAD_AUDIO-"].update(disabled=False)
+        window["-AUDIO_STREAM_BUTTON-"].update(disabled=False)
 
 def video_stream(YouTubeURL):
     yt = YouTube(YouTubeURL)
