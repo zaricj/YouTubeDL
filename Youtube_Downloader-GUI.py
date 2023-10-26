@@ -3,8 +3,6 @@ from pytube import YouTube
 import threading
 import queue
 
-#====== Variables ======#
-
 # Create a queue for communication between threads
 update_queue = queue.Queue()
 
@@ -33,6 +31,7 @@ def download_youtube_video(YouTubeURL, output_path):
         window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {video.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
         window["-BUTTON_DOWNLOAD_VIDEO-"].update(disabled=False)
         window["-VIDEO_STREAM_BUTTON-"].update(disabled=False)
+        window["-PBAR-"].update(0)
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
@@ -62,7 +61,7 @@ def download_youtube_audio(YouTubeURL, output_path):
         window["-OUTPUT_WINDOW-"].print(f"{yt.title} (Quality: {music.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
         window["-BUTTON_DOWNLOAD_AUDIO-"].update(disabled=False)
         window["-AUDIO_STREAM_BUTTON-"].update(disabled=False)
-        
+        window["-PBAR-"].update(0)
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
@@ -90,11 +89,11 @@ def audio_stream(YouTubeURL):
 #====== GUI Theme ======#
 my_new_theme = {'BACKGROUND': '#1c1e23',
                 'TEXT': '#d2d2d3',
-                'INPUT': '#3d3f46',
+                'INPUT': '#41444d',
                 'TEXT_INPUT': '#d2d2d3',
                 'SCROLL': '#c7e78b',
                 'BUTTON': ('white', '#c63a3d'),
-                'PROGRESS': ('#778eca', '#c63a3d'),
+                'PROGRESS': ('#59cf6e', '#41444d'),
                 'BORDER': 1,
                 'SLIDER_DEPTH': 0,
                 'PROGRESS_DEPTH': 0}
