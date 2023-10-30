@@ -1,4 +1,2 @@
 pysimplegui
-threading
-queue
 pytube
