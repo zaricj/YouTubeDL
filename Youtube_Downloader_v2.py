@@ -22,21 +22,17 @@ def download_youtube_video(YouTubeURL, output_path):
         if len(values["-QUALITY_FORMAT-"]) != 0 and values["-DOWNLOAD_FORMAT-"] == "Video Format":
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            window["-OUTPUT_WINDOW-"].print(
-                "Starting download... please wait.\n")
-            yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True,
-                         on_progress_callback=progress_callback)
+            window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n")
+            yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True,on_progress_callback=progress_callback)
 
             video = yt.streams.get_by_resolution(values["-QUALITY_FORMAT-"])
             video.download(output_path=output_path, skip_existing=True)
-            window["-OUTPUT_WINDOW-"].update(
-                f"{yt.title} (Quality: {video.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
+            window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {video.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
             window["-PBAR-"].update(0)
         else:
-            window["-OUTPUT_WINDOW-"].update(
-                "ERROR: Select a Quality of Stream first.")
+            window["-OUTPUT_WINDOW-"].update("ERROR: Select a Quality of Stream first.")
 
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update("")
@@ -60,16 +56,14 @@ def download_youtube_audio(YouTubeURL, output_path):
 
         if values["-DOWNLOAD_FORMAT-"] == "Audio Format":
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            window["-OUTPUT_WINDOW-"].print(
-                "Starting download... please wait.\n")
+            window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n")
             yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True,
                          on_progress_callback=progress_callback)
 
             # Gets highest bitrate for audio automatically. I guess this should be the default as you want the highest avaiable quality, especially for downloading music. :)
             music = yt.streams.get_audio_only()
             music.download(output_path=output_path, skip_existing=True)
-            window["-OUTPUT_WINDOW-"].update(
-                f"{yt.title} (Quality: {music.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
+            window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {music.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
             window["-PBAR-"].update(0)
@@ -84,17 +78,14 @@ def download_youtube_audio(YouTubeURL, output_path):
 def video_stream(YouTubeURL):
     yt = YouTube(YouTubeURL)
     window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
-    window["-OUTPUT_WINDOW-"].print(
-        "\nAvailable Video Streams: Loading... please wait.")
-    video_streams = yt.streams.filter(only_video=True, progressive=True)
+    window["-OUTPUT_WINDOW-"].print("\nAvailable Video Streams: Loading... please wait.")
+    video_streams = yt.streams.filter(only_video=True, subtype="mp4")
     # Collect resolutions in a list
     resolutions = [stream.resolution for stream in video_streams]
     for stream in video_streams:
         window["-OUTPUT_WINDOW-"].update(
             f"Resolution: {stream.resolution}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
-        window["-QUALITY_FORMAT-"].update(values=resolutions)
-    for i in values["-QUALITY_FORMAT-"]:
-        print(i)
+    window["-QUALITY_FORMAT-"].update(values=resolutions)
 
 # def audio_stream(YouTubeURL):
 #    yt = YouTube(YouTubeURL)
@@ -127,21 +118,16 @@ sg.theme("MyRed")
 
 # ====== GUI LAYOUT ======#
 column_description = [[sg.Text("YouTube Downloader", font="Arial 20 bold underline", text_color="#c63a3d")],
-                      [sg.Text(
-                          "A YouTube Downloader built with Python and PySimpleGUI.")],
-                      [sg.Text(
-                          "Where to save", font="Arial 16 bold underline", text_color="#c63a3d")],
+                      [sg.Text("A YouTube Downloader built with Python and PySimpleGUI.")],
+                      [sg.Text("Where to save", font="Arial 16 bold underline", text_color="#c63a3d")],
                       [sg.Text("Choose a location where you want to save the Files")],
                       [sg.Text("Save File to:"), sg.Input(key="-SAVE_TO_FOLDER-"), sg.FolderBrowse(size=(10, 1))]]
 
 column_download_layout = [[sg.Text("Downloading Part", font="Arial 16 bold underline", text_color="#c63a3d")],
                           [sg.Text("Stream type and quality settings:")],
-                          [sg.Text("Type of stream to download:   "), sg.Combo(["Audio Format", "Video Format"],
-                                                                               default_value="Audio Format", readonly=True, enable_events=True, key="-DOWNLOAD_FORMAT-")],
-                          [sg.Text("Quality of stream to download:"), sg.Combo(
-                              "", key="-QUALITY_FORMAT-", size=(13, 1))],
-                          [sg.Text(
-                              "Add a 'https://www.youtube.com/' link in the input box below:")],
+                          [sg.Text("Type of stream to download:   "), sg.Combo(["Audio Format", "Video Format"],default_value="Audio Format", readonly=True, enable_events=True, key="-DOWNLOAD_FORMAT-")],
+                          [sg.Text("Quality of stream to download:"), sg.Combo("", key="-QUALITY_FORMAT-", size=(13, 1))],
+                          [sg.Text("Add a 'https://www.youtube.com/' link in the input box below:")],
                           [sg.Text("Enter URL Link"), sg.Input(key="-LINK_INPUT-", size=(33, 1)), sg.Button("Download", key="-BUTTON_DOWNLOAD-"), sg.Button("Stream Info", key="-STREAM_INFO_BUTTON-")]]
 
 
@@ -164,11 +150,6 @@ while True:
     # ----Closing the programm with either option the [X] or just by pressing "Exit"----#
     if (event == sg.WIN_CLOSED or event == "-EXIT-"):
         break
-
-    if values["-DOWNLOAD_FORMAT-"] == "Audio Format":
-        window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-    elif values["-DOWNLOAD_FORMAT-"] == "Video Format":
-        window["-STREAM_INFO_BUTTON-"].update(disabled=False)
 
     if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
         if len(values["-SAVE_TO_FOLDER-"]) == 0:
