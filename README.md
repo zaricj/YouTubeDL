@@ -1,3 +1,3 @@
 # YouTube Downloader
 A YouTube Downloader built with Python and the PySimpleGUI package.
-![2023-05-08 15_43_55-YouTube Downloader](https://user-images.githubusercontent.com/93329694/236840476-97f19e24-06f9-401d-ab53-49a40c2a1361.png)
+![image](https://github.com/zaricj/YouTubeDL/assets/93329694/8bd2aa6f-a112-4a0c-b5d8-7691d8f9024b)
