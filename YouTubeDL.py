@@ -27,7 +27,7 @@ def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
             yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
             # Filter video streams based on the chosen resolution
-            video_streams = yt.streams.filter(file_extension="mp4", res=chosen_resolution, progressive=False)
+            video_streams = yt.streams.filter(file_extension="mp4", res=chosen_resolution, adaptive=True)
 
             # Check if there is at least one stream with the chosen resolution
             if video_streams:
@@ -109,7 +109,8 @@ def video_stream(YouTubeURL):
         window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
         window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
         window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
-        video_streams = yt.streams.filter(progressive=False,file_extension="mp4")
+        # Filter streams and exclude those with video_codec=None
+        video_streams = [stream for stream in yt.streams.filter(adaptive=True, file_extension="mp4") if stream.video_codec is not None and stream.resolution and int(stream.resolution[:-1]) >= 480]
         # Collect resolutions in a list
         resolutions = [stream.resolution for stream in video_streams]
         for stream in video_streams:
