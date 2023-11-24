@@ -27,7 +27,7 @@ def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
             yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
             # Filter video streams based on the chosen resolution
-            video_streams = yt.streams.filter(file_extension="mp4", res=chosen_resolution, progressive=True)
+            video_streams = yt.streams.filter(file_extension="mp4", res=chosen_resolution, progressive=False)
 
             # Check if there is at least one stream with the chosen resolution
             if video_streams:
@@ -109,7 +109,7 @@ def video_stream(YouTubeURL):
         window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
         window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
         window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
-        video_streams = yt.streams.filter(progressive=True,subtype="mp4")
+        video_streams = yt.streams.filter(progressive=False,file_extension="mp4")
         # Collect resolutions in a list
         resolutions = [stream.resolution for stream in video_streams]
         for stream in video_streams:
@@ -119,6 +119,8 @@ def video_stream(YouTubeURL):
         window["-STREAM_INFO_BUTTON-"].update(disabled=False)
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update(f"ERROR: {e}")
+        window["-BUTTON_DOWNLOAD-"].update(disabled=False)
+        window["-STREAM_INFO_BUTTON-"].update(disabled=False)
 
 def audio_stream(YouTubeURL):
     try:
@@ -137,6 +139,8 @@ def audio_stream(YouTubeURL):
         window["-STREAM_INFO_BUTTON-"].update(disabled=False)
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update(f"ERROR: {e}")
+        window["-BUTTON_DOWNLOAD-"].update(disabled=False)
+        window["-STREAM_INFO_BUTTON-"].update(disabled=False)
 
 # ====== GUI Theme ======#
 my_new_theme = {'BACKGROUND': '#1c1e23',
