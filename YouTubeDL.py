@@ -1,8 +1,13 @@
 import PySimpleGUI as sg
 from pytube import YouTube
-import threading
+import threading, subprocess, os, ffmpeg, re
+from pathlib import Path
 
-# ====== Functions ======#
+# Add the FFmpeg binary directory to the PATH
+ffmpeg_path = "./ffmpeg/bin"
+os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
+
+# ====== Functions ====== #
 
 def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
     try:
@@ -27,16 +32,37 @@ def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
             yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
             # Filter video streams based on the chosen resolution
-            video_streams = yt.streams.filter(file_extension="mp4", res=chosen_resolution, adaptive=True)
+            video_streams = yt.streams.filter(progressive=False, file_extension="mp4", res=chosen_resolution)
 
+            # Find the first available stream with the chosen audio quality
+            chosen_video_stream = next((stream for stream in video_streams if stream.resolution == chosen_resolution), None)
+            
             # Check if there is at least one stream with the chosen resolution
             if video_streams:
-                # Choose the first available stream with the selected resolution
-                selected_stream = video_streams[0]
+                
+                # Forbidden characters in filename pattern
+                forbidden_chars_pattern = r'[\\/:"?<>|]'
+                
+                # Sanitized filename for ffmpeg encoder
+                sanitized_filename = yt.title.replace(" ","_")
+                sanitized_filename_with_extension = sanitized_filename + "." + chosen_video_stream.subtype
+                
+                # If the filename contains forbidden characters, delete them in an if clause
+                if re.search(forbidden_chars_pattern, sanitized_filename_with_extension):
+                    cleared_sanitized_filename_with_extension = re.sub(forbidden_chars_pattern, '', sanitized_filename_with_extension)
+                else:
+                    cleared_sanitized_filename_with_extension = sanitized_filename_with_extension
+                cleared_filename_without_extension = cleared_sanitized_filename_with_extension.removesuffix(f".{chosen_video_stream.subtype}")
+                
                 # Download the selected video stream
-                selected_stream.download(output_path=output_path, skip_existing=True)
+                path = Path(output_path)
+                chosen_video_stream.download(output_path=output_path, filename=cleared_sanitized_filename_with_extension, skip_existing=True)
 
-                window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {selected_stream.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
+                # FFmpeg extract audio and add it to the downlaoded video 
+                input_file = os.path.join(output_path, cleared_sanitized_filename_with_extension)
+                output_file = os.path.join(output_path, f"{cleared_filename_without_extension}.mp3")
+
+                window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {chosen_video_stream.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
             else:
                 window["-OUTPUT_WINDOW-"].update(f"No video stream found with resolution: {chosen_resolution}\nPerhaps it's the wrong format?\nIf so, press Stream Info button again to reload the list.")
 
@@ -65,15 +91,12 @@ def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
             bytes_downloaded = total_size - remaining_bytes
             percentage = (bytes_downloaded / total_size) * 100
             progress_text = f"Downloaded {bytes_downloaded}/{total_size}\n"
-
-            # window["-OUTPUT_WINDOW-"].update(progress_text)
             window["-PBAR-"].update(percentage)
 
         if len(chosen_audio_quality) != 0 and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n")
-            yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True,
-                         on_progress_callback=progress_callback)
+            window["-OUTPUT_WINDOW-"].print("Starting download and ffmpeg encoder... please wait.\n")
+            yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
             # Filter audio streams based on the chosen quality
             audio_streams = yt.streams.filter(only_audio=True)
@@ -82,8 +105,33 @@ def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
             chosen_audio_stream = next((stream for stream in audio_streams if stream.abr == chosen_audio_quality), None)
 
             if chosen_audio_stream:
-                chosen_audio_stream.download(output_path=output_path, skip_existing=True)
-                window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {chosen_audio_stream.abr})\nhas been successfully downloaded.\nSaved in {output_path}")
+                
+                # Forbidden characters in filename pattern
+                forbidden_chars_pattern = r'[\\/:"?<>|]'
+                
+                # Sanitize the filename by replacing spaces with underscores
+                sanitized_filename = yt.title.replace(" ","_")
+                sanitized_filename_with_extension = sanitized_filename + "." + chosen_audio_stream.subtype
+                
+                # If the filename contains forbidden characters, delete them in an if clause
+                if re.search(forbidden_chars_pattern, sanitized_filename_with_extension):
+                    cleared_sanitized_filename_with_extension = re.sub(forbidden_chars_pattern, '', sanitized_filename_with_extension)
+                else:
+                    cleared_sanitized_filename_with_extension = sanitized_filename_with_extension
+                cleared_filename_without_extension = cleared_sanitized_filename_with_extension.removesuffix(f".{chosen_audio_stream.subtype}")
+                
+                # Download the chosen audio stream
+                path = Path(output_path)
+                chosen_audio_stream.download(output_path=path, filename=cleared_sanitized_filename_with_extension, skip_existing=True)
+
+                # FFmpeg conversion to MP3
+                input_file = os.path.join(output_path, cleared_sanitized_filename_with_extension)
+                output_file = os.path.join(output_path, f"{cleared_filename_without_extension}.mp3")
+                subprocess.run(['ffmpeg', '-i', input_file, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', output_file], capture_output=True)
+                os.remove(input_file)
+                replace_with_whitespaces = output_file.replace("_"," ")
+                os.rename(output_file, replace_with_whitespaces)
+                window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {chosen_audio_stream.abr})\nhas been successfully downloaded and converted to MP3.\nSaved in {output_path}")
             else:
                 window["-OUTPUT_WINDOW-"].update(f"No audio stream found with quality: {chosen_audio_quality}\nPerhaps it's the wrong format?\nIf so, press Stream Info button again to reload the list.")
 
@@ -110,11 +158,11 @@ def video_stream(YouTubeURL):
         window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
         window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
         # Filter streams and exclude those with video_codec=None
-        video_streams = [stream for stream in yt.streams.filter(adaptive=True, file_extension="mp4") if stream.video_codec is not None and stream.resolution and int(stream.resolution[:-1]) >= 480]
+        video_streams = [stream for stream in yt.streams.filter(progressive=False, file_extension="mp4") if stream.video_codec is not None and stream.resolution and int(stream.resolution[:-1]) >= 480]
         # Collect resolutions in a list
         resolutions = [stream.resolution for stream in video_streams]
         for stream in video_streams:
-            window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
+            window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, FPS: {stream.fps}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
             window["-QUALITY_FORMAT-"].update(values=resolutions)
         window["-BUTTON_DOWNLOAD-"].update(disabled=False)
         window["-STREAM_INFO_BUTTON-"].update(disabled=False)
@@ -192,7 +240,7 @@ while True:
 
     event, values = window.read()
 
-    # ----Closing the programm with either option the [X] or just by pressing "Exit"----#
+    # ----Closing the programm with either option [X] or just by pressing "Exit"----#
     if (event == sg.WIN_CLOSED or event == "-EXIT-"):
         break
 
