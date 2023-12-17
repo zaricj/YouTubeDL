@@ -28,40 +28,60 @@ def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
         if len(chosen_resolution) != 0 and values["-DOWNLOAD_FORMAT-"] == "Video Format":
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            window["-OUTPUT_WINDOW-"].print("Starting download... please wait.\n")
+            window["-OUTPUT_WINDOW-"].print("Starting download and encoding... please wait.\n")
             yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
-            # Filter video streams based on the chosen resolution
-            video_streams = yt.streams.filter(progressive=False, file_extension="mp4", res=chosen_resolution)
+            # Filter video streams based on the chosen resolution and audio for getting the videos audio for later merging with FFMPEG
+            video_streams = yt.streams.filter(only_video=True, progressive=False, file_extension="mp4", res=chosen_resolution)
+            only_audio_stream = yt.streams.filter(progressive=False, mime_type="audio/webm", abr="160kbps", audio_codec="opus")
 
-            # Find the first available stream with the chosen audio quality
+            # Find the first available stream with the chosen video quality
             chosen_video_stream = next((stream for stream in video_streams if stream.resolution == chosen_resolution), None)
+            # Get the audio stream of the video, with acodec=opus and quality at 160kbps
+            chosen_audio_stream = next((stream for stream in only_audio_stream if stream.audio_codec == "opus" and stream.abr == "160kbps"), None)
             
             # Check if there is at least one stream with the chosen resolution
             if video_streams:
                 
-                # Forbidden characters in filename pattern
+                # Forbidden characters pattern in filename (Windows)
                 forbidden_chars_pattern = r'[\\/:"?<>|]'
                 
                 # Sanitized filename for ffmpeg encoder
                 sanitized_filename = yt.title.replace(" ","_")
-                sanitized_filename_with_extension = sanitized_filename + "." + chosen_video_stream.subtype
+                sanitized_filename_with_extension = f"{sanitized_filename}.{chosen_video_stream.subtype}" 
                 
-                # If the filename contains forbidden characters, delete them in an if clause
+                # If the filename contains forbidden characters, delete them for VIDEO
                 if re.search(forbidden_chars_pattern, sanitized_filename_with_extension):
                     cleared_sanitized_filename_with_extension = re.sub(forbidden_chars_pattern, '', sanitized_filename_with_extension)
                 else:
                     cleared_sanitized_filename_with_extension = sanitized_filename_with_extension
+                    
+                # Filename without the forbidden characters and without the filetype extension
                 cleared_filename_without_extension = cleared_sanitized_filename_with_extension.removesuffix(f".{chosen_video_stream.subtype}")
                 
                 # Download the selected video stream
-                path = Path(output_path)
                 chosen_video_stream.download(output_path=output_path, filename=cleared_sanitized_filename_with_extension, skip_existing=True)
+                # Download the audio stream of the video
+                chosen_audio_stream.download(output_path=output_path, filename="audio.webm", skip_existing=True)
+                
+                # FFmpeg extract audio and add it to the downloaded video
+                input_video_file  = os.path.join(output_path, cleared_sanitized_filename_with_extension) # video file
+                temp_audio_file = os.path.join(output_path, "audio.webm") # audio file for merging
+                output_video_with_audio = os.path.join(output_path, f"{cleared_filename_without_extension}_.mp4") # merged audio and video file
+                
+                # FFmpeg command for merging audio and video
+                ffmpeg.input(input_video_file).output(output_video_with_audio, vf='pad=ceil(iw/2)*2:ceil(ih/2)*2', acodec='opus', strict='experimental').run(overwrite_output=True)
 
-                # FFmpeg extract audio and add it to the downlaoded video 
-                input_file = os.path.join(output_path, cleared_sanitized_filename_with_extension)
-                output_file = os.path.join(output_path, f"{cleared_filename_without_extension}.mp3")
+                # Remove the temporary audio file
+                os.remove(temp_audio_file)
 
+                # Replace underscore (_) with whitespaces again for the encoded file
+                replace_with_whitespaces = output_video_with_audio.replace("_", " ")
+                os.rename(output_video_with_audio, replace_with_whitespaces)
+                
+                # Remove the video file
+                os.remove(input_video_file)
+                
                 window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {chosen_video_stream.resolution})\nhas been successfully downloaded.\nSaved in {output_path}")
             else:
                 window["-OUTPUT_WINDOW-"].update(f"No video stream found with resolution: {chosen_resolution}\nPerhaps it's the wrong format?\nIf so, press Stream Info button again to reload the list.")
@@ -73,11 +93,15 @@ def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
             window["-OUTPUT_WINDOW-"].update("ERROR: Select a Quality of Stream first.")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+            window["-PBAR-"].update(0)
+            
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
+        window["-OUTPUT_WINDOW-"].print(ffmpeg)
         window["-BUTTON_DOWNLOAD-"].update(disabled=False)
         window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+        window["-PBAR-"].update(0)
 
 def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
     try:
@@ -121,16 +145,20 @@ def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
                 cleared_filename_without_extension = cleared_sanitized_filename_with_extension.removesuffix(f".{chosen_audio_stream.subtype}")
                 
                 # Download the chosen audio stream
-                path = Path(output_path)
-                chosen_audio_stream.download(output_path=path, filename=cleared_sanitized_filename_with_extension, skip_existing=True)
-
+                chosen_audio_stream.download(output_path=output_path, filename=cleared_sanitized_filename_with_extension, skip_existing=True)
+                
                 # FFmpeg conversion to MP3
                 input_file = os.path.join(output_path, cleared_sanitized_filename_with_extension)
                 output_file = os.path.join(output_path, f"{cleared_filename_without_extension}.mp3")
+                print(input_file)
+                print(output_file)
                 subprocess.run(['ffmpeg', '-i', input_file, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', output_file], capture_output=True)
                 os.remove(input_file)
+                
+                # Replace underscore (_) with whitespaces again for the encoded file
                 replace_with_whitespaces = output_file.replace("_"," ")
                 os.rename(output_file, replace_with_whitespaces)
+                
                 window["-OUTPUT_WINDOW-"].update(f"{yt.title} (Quality: {chosen_audio_stream.abr})\nhas been successfully downloaded and converted to MP3.\nSaved in {output_path}")
             else:
                 window["-OUTPUT_WINDOW-"].update(f"No audio stream found with quality: {chosen_audio_quality}\nPerhaps it's the wrong format?\nIf so, press Stream Info button again to reload the list.")
@@ -142,12 +170,14 @@ def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
             window["-OUTPUT_WINDOW-"].update("ERROR: Select a Quality of Stream first.")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+            window["-PBAR-"].update(0)
 
     except Exception as e:
         window["-OUTPUT_WINDOW-"].update("")
         window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
         window["-BUTTON_DOWNLOAD-"].update(disabled=False)
         window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+        window["-PBAR-"].update(0)
 
 def video_stream(YouTubeURL):
     try:
@@ -215,14 +245,14 @@ column_description = [[sg.Text("YouTube Downloader", font="Arial 20 bold underli
 
 column_file_save_location = [[sg.Text("Where to save", font="Arial 16 bold underline", text_color="#c63a3d")],
                       [sg.Text("Choose a location where you want to save downloads")],
-                      [sg.Text("Save Location:"), sg.Input(size=(40,1), key="-SAVE_TO_FOLDER-"), sg.FolderBrowse(size=(10, 1))]]
+                      [sg.Text("Save Location:"), sg.Input(default_text="C:/Users/Jovan/Pictures",size=(40,1), key="-SAVE_TO_FOLDER-"), sg.FolderBrowse(size=(10, 1))]]
 
 column_download_layout = [[sg.Text("Downloading Part", font="Arial 16 bold underline", text_color="#c63a3d")],
                           [sg.Text("Stream type and quality settings:")],
                           [sg.Text("Type of stream to download:   "), sg.Combo(["Audio Format", "Video Format"],default_value="Audio Format", readonly=True, enable_events=True, key="-DOWNLOAD_FORMAT-")],
                           [sg.Text("Quality of stream to download:"), sg.Combo("", readonly=True, key="-QUALITY_FORMAT-", size=(13, 1))],
                           [sg.Text("Add a 'https://www.youtube.com/' link in the input box below:")],
-                          [sg.Text("Enter URL Link:"), sg.Input(key="-LINK_INPUT-", size=(31, 1)), sg.Button("Download", key="-BUTTON_DOWNLOAD-"), sg.Button("Stream Info", key="-STREAM_INFO_BUTTON-")]]
+                          [sg.Text("Enter URL Link:"), sg.Input(default_text="https://www.youtube.com/watch?v=mlu7ic_tmf4",key="-LINK_INPUT-", size=(31, 1)), sg.Button("Download", key="-BUTTON_DOWNLOAD-"), sg.Button("Stream Info", key="-STREAM_INFO_BUTTON-")]]
 
 column_output_and_progressbar = [[sg.Multiline(size=(65, 10), key="-OUTPUT_WINDOW-")],
                                  [sg.Text("Progress:"), sg.ProgressBar(100, size=(45, 25), key="-PBAR-"), sg.Button("Exit", key="-EXIT-", size=(7, 1)), sg.Button("Clear", size=(7, 1), key="-CLEAR_OUTPUT-", tooltip="Clears Output Window and Progressbar if stuck.")]]
