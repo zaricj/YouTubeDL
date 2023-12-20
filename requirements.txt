@@ -1,2 +1,4 @@
 pysimplegui
 pytube
+webbrowser
+pathlib
