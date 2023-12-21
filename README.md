@@ -1,6 +1,6 @@
 # YouTube Downloader
 ### Description
-A YouTube Downloader GUI built in Python with the amazing PySimpleGUI, it uses the pytube module for downloading audo and videos from youtube and FFmpeg to convert the audio files which are usually .mp4 or .webm to .mp3 and merging audio/video together since I am using the Adaprive Streams from YouTube so it downloads videos at the specified Quality without sound.
+A YouTube Downloader GUI built in Python with the amazing PySimpleGUI, it uses the pytube module for downloading audio and videos from youtube and FFmpeg to convert the audio files which are usually .mp4 or .webm to .mp3 and merging audio/video together since I am using the Adaprive Streams from YouTube so it downloads videos at the specified Quality without sound.
 
 ### Requirements
 - Python
