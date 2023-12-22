@@ -29,7 +29,7 @@ The code WILL not run if you don't have FFmpeg, also you have to add FFmpeg to t
 
 ### Functionality I want to add in the future:
 
-- A listbox to add multiple Links to download and a '+ Button' to append URLs ti the listbox.
+- A listbox to add multiple Links to download and a '+ Button' to append URLs to the listbox.
 
 # Screenshot of the Program
 ![image](https://github.com/zaricj/YouTubeDL/assets/93329694/8bd2aa6f-a112-4a0c-b5d8-7691d8f9024b)
