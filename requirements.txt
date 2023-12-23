@@ -1,2 +1,5 @@
 pysimplegui
 pytube
+python-ffmpeg
+webbrowser
+pathlib
