@@ -33,3 +33,6 @@ The code WILL not run if you don't have FFmpeg, also you have to add FFmpeg to t
 
 # Screenshot of the Program
 ![image](https://github.com/zaricj/YouTubeDL/assets/93329694/8bd2aa6f-a112-4a0c-b5d8-7691d8f9024b)
+
+# Screenshot of Program with Listbox function
+![python_rfzo2ZKTlC](https://github.com/zaricj/YouTubeDL/assets/93329694/fe3d4579-cd63-495a-bc42-3d0858c4dbf6)
