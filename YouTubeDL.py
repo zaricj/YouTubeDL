@@ -34,7 +34,7 @@ def main():
                 yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
                 # Filter video streams based on the chosen resolution and audio for getting the videos audio for later merging with FFmpeg
-                video_streams = yt.streams.filter(only_video=True, progressive=False, file_extension="mp4", res=chosen_resolution)
+                video_streams = yt.streams.filter(only_video=True, mime_type="video/mp4", res=chosen_resolution)
                 audio_streams = yt.streams.get_audio_only("mp4") # Get the highest quality audio stream of the video (128kbps)
 
                 # Find the first available stream with the chosen video quality
@@ -119,7 +119,7 @@ def main():
                 yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
                 # Filter audio streams based on the chosen quality
-                audio_streams = yt.streams.filter(only_audio=True)
+                audio_streams = yt.streams.filter(only_audio=True, audio_codec="opus")
 
                 # Find the first available stream with the chosen audio quality
                 chosen_audio_stream = next((stream for stream in audio_streams if stream.abr == chosen_audio_quality), None)
@@ -184,7 +184,7 @@ def main():
             window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
             window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
             # Filter streams and exclude those with video_codec=None
-            video_streams = [stream for stream in yt.streams.filter(progressive=False, file_extension="mp4") if stream.video_codec is not None and stream.resolution and int(stream.resolution[:-1]) >= 480]
+            video_streams = [stream for stream in yt.streams.filter(only_video=True, mime_type="video/mp4")]
             # Collect resolutions in a list
             resolutions = [stream.resolution for stream in video_streams]
             for stream in video_streams:
@@ -205,7 +205,7 @@ def main():
             window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
             window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
             window["-OUTPUT_WINDOW-"].print("Available Audio Streams:\n")
-            audio_streams = yt.streams.filter(only_audio=True)
+            audio_streams = yt.streams.filter(only_audio=True, audio_codec="opus")
             abrs = [stream.abr for stream in audio_streams]  # Collect audio quality (abr) in a list
             for stream in audio_streams:
                 window["-OUTPUT_WINDOW-"].print(f"Abr: {stream.abr}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
