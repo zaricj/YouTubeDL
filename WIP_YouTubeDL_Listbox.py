@@ -304,9 +304,9 @@ def main():
                         yt = YouTube(urls[index])
                         title = yt.title
                         urls.pop(index)
+                        listbox_urls.pop(index)
                         id_counter -= 1
-                        window["-URL_LIST-"].update(values=urls)
-                    window["-OUTPUT_WINDOW-"].print(len(urls))
+                        window["-URL_LIST-"].update(values=listbox_urls)
                     window["-STATUSBAR-"].update(len(urls))
                     window["-OUTPUT_WINDOW-"].update(f"Removed `{title}` from list!")
                 elif event == "Delete All":
@@ -351,7 +351,7 @@ def main():
                 window["-OUTPUT_WINDOW-"].update(f"Added YouTube Video to list: {yt.title}")
             elif is_duplicate(url):
                 window["-OUTPUT_WINDOW-"].update(f"Duplicate link: '{url}' already in the list!")
-                window["-LINK_INPUT"].update("")
+                window["-LINK_INPUT-"].update("")
 
         # Downloading Video File
         elif event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
