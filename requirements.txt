@@ -1,4 +1,0 @@
-pysimplegui
-pytube
-python-ffmpeg
-pathlib

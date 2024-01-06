@@ -1,16 +1,22 @@
 import PySimpleGUI as sg
 from pytube import YouTube
-import threading, subprocess, os, ffmpeg, re, webbrowser
 from pathlib import Path
+import threading
+import subprocess 
+import os
+import ffmpeg
+import re 
+import webbrowser
+import re
 
 def main():
+    
 # Add the FFmpeg binary directory to the PATH
     ffmpeg_path = "./ffmpeg/bin"
     os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
 
     # ====== Functions ====== #
-
-    def download_youtube_video(YouTubeURL, output_path, chosen_resolution):
+    def download_youtube_video(youtube_url, output_path, chosen_resolution):
         try:
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
@@ -31,7 +37,7 @@ def main():
                 window["-STREAM_INFO_BUTTON-"].update(disabled=True)
                 window["-OUTPUT_WINDOW-"].print("Starting download and encoding... please wait.\n")
 
-                yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
+                yt = YouTube(youtube_url, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
                 # Filter video streams based on the chosen resolution and audio for getting the videos audio for later merging with FFmpeg
                 video_streams = yt.streams.filter(only_video=True, mime_type="video/mp4", res=chosen_resolution)
@@ -99,7 +105,7 @@ def main():
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
             window["-PBAR-"].update(0)
 
-    def download_youtube_audio(YouTubeURL, output_path, chosen_audio_quality):
+    def download_youtube_audio(youtube_url, output_path, chosen_audio_quality):
         try:
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
@@ -116,7 +122,7 @@ def main():
             if len(chosen_audio_quality) != 0 and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
                 window["-STREAM_INFO_BUTTON-"].update(disabled=True)
                 window["-OUTPUT_WINDOW-"].print("Starting download and ffmpeg encoder... please wait.\n")
-                yt = YouTube(YouTubeURL, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
+                yt = YouTube(youtube_url, use_oauth=False, allow_oauth_cache=True, on_progress_callback=progress_callback)
 
                 # Filter audio streams based on the chosen quality
                 audio_streams = yt.streams.filter(only_audio=True, audio_codec="opus")
@@ -135,7 +141,7 @@ def main():
 
                     # If the filename contains forbidden characters, delete them in an if clause
                     if re.search(forbidden_chars_pattern, sanitized_filename_with_extension):
-                        cleared_video_filename = re.sub(forbidden_chars_pattern, '', sanitized_filename_with_extension)
+                        cleared_video_filename = re.sub(forbidden_chars_pattern, " ", sanitized_filename_with_extension)
                     else:
                         cleared_video_filename = sanitized_filename_with_extension
                     cleared_filename_without_extension = cleared_video_filename.removesuffix(f".{chosen_audio_stream.subtype}")
@@ -146,9 +152,7 @@ def main():
                     # FFmpeg conversion to MP3
                     input_file = os.path.join(output_path, cleared_video_filename)
                     output_file = os.path.join(output_path, f"{cleared_filename_without_extension}.mp3")
-                    print(input_file)
-                    print(output_file)
-                    subprocess.run(['ffmpeg', '-i', input_file, '-vn', '-ar', '44100', '-ac', '2', '-b:a', '192k', output_file], capture_output=True)
+                    subprocess.run(["ffmpeg", "-i", input_file, "-vn", "-ar", "44100", "-ac", "2", "-q:a", "192k", output_file], capture_output=True)
                     os.remove(input_file)
 
                     # Replace underscore (_) with whitespaces again for the encoded file
@@ -175,43 +179,62 @@ def main():
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
             window["-PBAR-"].update(0)
 
-    def video_stream(YouTubeURL):
+    def video_stream(youtube_url):
         try:
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            yt = YouTube(YouTubeURL)
-            window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
-            window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
-            window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
-            # Filter streams and exclude those with video_codec=None
-            video_streams = [stream for stream in yt.streams.filter(only_video=True, mime_type="video/mp4")]
-            # Collect resolutions in a list
-            resolutions = [stream.resolution for stream in video_streams]
-            for stream in video_streams:
-                window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, FPS: {stream.fps}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
-                window["-QUALITY_FORMAT-"].update(values=resolutions)
-            window["-BUTTON_DOWNLOAD-"].update(disabled=False)
-            window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+            
+            validate_youtube_url = (
+                    r'(https?://)?(www\.)?'
+                    '(youtube|youtu|youtube-nocookie)\.(com|be)/'
+                    '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+                    )
+            valid_youtube_url = re.match(validate_youtube_url, youtube_url)
+            if valid_youtube_url:
+                yt = YouTube(youtube_url)
+                window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
+                window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
+                window["-OUTPUT_WINDOW-"].print("Available Video Streams:\n")
+                # Filter streams and exclude those with video_codec=None
+                video_streams = [stream for stream in yt.streams.filter(only_video=True, mime_type="video/mp4")]
+                # Collect resolutions in a list
+                resolutions = [stream.resolution for stream in video_streams]
+                for stream in video_streams:
+                    window["-OUTPUT_WINDOW-"].print(f"Resolution: {stream.resolution}, FPS: {stream.fps}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
+                    window["-QUALITY_FORMAT-"].update(values=resolutions)
+            else:
+                window["-OUTPUT_WINDOW-"].update("ERROR: Invalid Link, enter a YouTube Link")
+                window["-BUTTON_DOWNLOAD-"].update(disabled=False)
+                window["-STREAM_INFO_BUTTON-"].update(disabled=False)
         except Exception as e:
             window["-OUTPUT_WINDOW-"].update(f"ERROR: {e}")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
 
-    def audio_stream(YouTubeURL):
+    def audio_stream(youtube_url):
         try:
             window["-BUTTON_DOWNLOAD-"].update(disabled=True)
             window["-STREAM_INFO_BUTTON-"].update(disabled=True)
-            yt = YouTube(YouTubeURL)
-            window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
-            window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
-            window["-OUTPUT_WINDOW-"].print("Available Audio Streams:\n")
-            audio_streams = yt.streams.filter(only_audio=True, audio_codec="opus")
-            abrs = [stream.abr for stream in audio_streams]  # Collect audio quality (abr) in a list
-            for stream in audio_streams:
-                window["-OUTPUT_WINDOW-"].print(f"Abr: {stream.abr}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
-                window["-QUALITY_FORMAT-"].update(values=abrs)
-            window["-BUTTON_DOWNLOAD-"].update(disabled=False)
-            window["-STREAM_INFO_BUTTON-"].update(disabled=False)
+            validate_youtube_url = (
+            r'(https?://)?(www\.)?'
+            '(youtube|youtu|youtube-nocookie)\.(com|be)/'
+            '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+            )
+            valid_youtube_url = re.match(validate_youtube_url, youtube_url)
+            if valid_youtube_url:
+                yt = YouTube(youtube_url)
+                window["-OUTPUT_WINDOW-"].update(f"Video Title: {yt.title}")
+                window["-OUTPUT_WINDOW-"].print("\nLoading... please wait.\n")
+                window["-OUTPUT_WINDOW-"].print("Available Audio Streams:\n")
+                audio_streams = yt.streams.filter(only_audio=True, audio_codec="opus")
+                abrs = [stream.abr for stream in audio_streams]  # Collect audio quality (abr) in a list
+                for stream in audio_streams:
+                    window["-OUTPUT_WINDOW-"].print(f"Abr: {stream.abr}, Codec: {stream.subtype}, Filesize: {stream.filesize / (1024 * 1024):.2f} MB")
+                    window["-QUALITY_FORMAT-"].update(values=abrs)
+            else:
+                window["-OUTPUT_WINDOW-"].update("ERROR: Invalid Link, enter a YouTube Link")
+                window["-BUTTON_DOWNLOAD-"].update(disabled=False)
+                window["-STREAM_INFO_BUTTON-"].update(disabled=False)
         except Exception as e:
             window["-OUTPUT_WINDOW-"].update(f"ERROR: {e}")
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
@@ -224,7 +247,7 @@ def main():
                     'TEXT_INPUT': '#d2d2d3',
                     'SCROLL': '#1c1e23',
                     'BUTTON': ('white', '#c63a3d'),
-                    'PROGRESS': ('#778eca', '#c63a3d'),
+                    'PROGRESS': ('#f8be1a', '#c63a3d'),
                     'BORDER': 1,
                     'SLIDER_DEPTH': 0,
                     'PROGRESS_DEPTH': 0}
@@ -267,53 +290,51 @@ def main():
     # Event loop to process "events" and get the "values" of the inputs
     while True:
 
-        event, values = window.read()
+        event, values = window.read(timeout=500)
 
         # ----Closing the programm with either option [X] or just by pressing "Exit"----#
         if (event == sg.WIN_CLOSED or event == "-EXIT-"):
             break
 
         if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
-        
             if len(values["-SAVE_TO_FOLDER-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a path where to save the video download.")
+                    "ERROR: Please enter a path where to save the download.")
             elif len(values["-LINK_INPUT-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a valid YouTube link for video download.")
+                    "ERROR: Please enter a YouTube link for downloading.")
             else:
                 download_thread = threading.Thread(target=download_youtube_video, args=(
                     values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
                 download_thread.start()
 
-        elif event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
-        
+        if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
             if len(values["-SAVE_TO_FOLDER-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a path where to save the audio download.")
+                    "ERROR: Please enter a path where to save the download.")
             elif len(values["-LINK_INPUT-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a valid YouTube link for audio download.")
+                    "ERROR: Please enter a YouTube link for downloading.")
             else:
                 download_thread = threading.Thread(target=download_youtube_audio, args=(
                     values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
                 download_thread.start()
-
-        elif event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
+                
+        if event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
             if len(values["-LINK_INPUT-"]) > 0:
                 get_video_stream_thread = threading.Thread(target=video_stream, args=(values["-LINK_INPUT-"],))
                 get_video_stream_thread.start()
             else:
                 window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of video stream because link input is empty.")
 
-        elif event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
+        if event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
           if len(values["-LINK_INPUT-"]) > 0:
               get_audio_stream_thread = threading.Thread(target=audio_stream, args=(values["-LINK_INPUT-"],))
               get_audio_stream_thread.start()
           else:
               window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of audio stream because link input is empty.")
 
-        elif event == "-URL_REDIRECT-":
+        if event == "-URL_REDIRECT-":
             url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z"
             webbrowser.open(url)
 
@@ -321,10 +342,10 @@ def main():
             window["-OUTPUT_WINDOW-"].update("")
             window["-PBAR-"].update(0)
             
-        elif event == "Clear Output":
+        if event == "Clear Output":
             window["-OUTPUT_WINDOW-"].update("")
 
-        elif event == "Version":
+        if event == "Version":
             sg.popup_scrolled(sg.get_versions())
 
     window.close()
