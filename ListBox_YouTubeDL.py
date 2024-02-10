@@ -12,8 +12,8 @@ from pathlib import Path
 def main():
 
     # Add the FFmpeg binary directory to the PATH
-    ffmpeg_path = "./ffmpeg/bin"
-    os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
+    # ffmpeg_path = "./ffmpeg/bin"
+    # os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
 
     # ====== Functions ====== #
     def download_youtube_video(youtube_urls, output_path, chosen_resolution):
@@ -89,7 +89,7 @@ def main():
                         replace_with_whitespaces = the_video_file.replace("_", " ")
                         os.rename(the_video_file, replace_with_whitespaces)
 
-                        window["-OUTPUT_WINDOW-"].update(f"Links have been successfully downloaded and converted to MP3.\nSaved in {output_path}")
+                        window["-OUTPUT_WINDOW-"].update(f"Links have been successfully downloaded and converted to MP4.\nSaved in {output_path}")
                     else:
                         window["-OUTPUT_WINDOW-"].update(f"No video stream found with resolution: {chosen_resolution}\nPerhaps it's the wrong format?\nIf so, press Stream Info button again to reload the list.")
 
@@ -305,16 +305,19 @@ def main():
                         title = yt.title
                         urls.pop(index)
                         listbox_urls.pop(index)
+                        # Update remaining URLs' indexes
+                        for i in range(index, len(listbox_urls)):
+                            listbox_urls[i] = f"{i+1}. {listbox_urls[i].split('. ', 1)[1]}"
                         id_counter -= 1
                         window["-URL_LIST-"].update(values=listbox_urls)
                     window["-STATUSBAR-"].update(len(urls))
                     window["-OUTPUT_WINDOW-"].update(f"Removed `{title}` from list!")
                 elif event == "Delete All":
-                    urls = []
+                    urls.clear()
+                    listbox_urls.clear()
                     id_counter = 1
-                    window["-URL_LIST-"].update(values=urls)
+                    window["-URL_LIST-"].update(values=listbox_urls)
                     window["-STATUSBAR-"].update("0")
-                    window["-OUTPUT_WINDOW-"].update("Deleted whole List of links!")
             except UnboundLocalError:
                 window["-OUTPUT_WINDOW-"].update("ERROR: To delete an item from Listbox, select it first.")
 
@@ -337,7 +340,7 @@ def main():
         elif event == "-APPEND_URL_TO_LIST-":
             url = values["-LINK_INPUT-"]
             if "https://www.youtube.com/watch" not in url:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a valid YouTube URL and not some trash.")
+                window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a valid YouTube URL.")
             elif url and not is_duplicate(url):
                 yt = YouTube(url)
                 # urls.append(f"{id_counter}. {url}") THIS SEEMS TO WORK FOR SOME REASON? BUT I WANT TO TRY SOMETHING ELSE

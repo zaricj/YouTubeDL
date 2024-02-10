@@ -11,9 +11,15 @@ import re
 
 def main():
     
-# Add the FFmpeg binary directory to the PATH
-    ffmpeg_path = "./ffmpeg/bin"
-    os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
+# Add the FFmpeg binary directory to the PATH 
+    # current_working_path = os.path.dirname(os.path.abspath(__file__)) # Current working Directory
+    # print(current_working_path)
+    # ffmpeg_path = "./ffmpeg/bin"
+    # if ffmpeg_path:
+    #     os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
+    # else:
+    #     print("No FFmpeg folder found")
+    #     pass
 
     # ====== Functions ====== #
     def download_youtube_video(youtube_url, output_path, chosen_resolution):
@@ -263,7 +269,7 @@ def main():
     # ====== GUI LAYOUT ====== #
     column_description = [[sg.Text("YouTube Downloader", font="Arial 20 bold underline", text_color="#c63a3d")],
                           [sg.Text("A YouTube Downloader built with Python and PySimpleGUI.")],
-                          [sg.Text("FFmpeg is required! You can get in here:"),sg.Text("FFmpeg",font="Arial 14 underline",text_color="#c63a3d",enable_events=True,tooltip="Direct link download to FFmpeg.", key="-URL_REDIRECT-")]]
+                          [sg.Text("FFmpeg is required! You can get in here:"),sg.Text("FFmpeg for Windows",font="Arial 14 underline",text_color="#c63a3d",enable_events=True,tooltip="Direct link download to FFmpeg for Windows only.", key="-URL_REDIRECT-"),sg.Button("Check FFmpeg",size=(12,1),key="-CHECK_IF_FFMPEG_INSTALLED-")]]
 
     column_file_save_location = [[sg.Text("Where to save", font="Arial 16 bold underline", text_color="#c63a3d")],
                           [sg.Text("Choose a location where you want to save downloads")],
@@ -286,35 +292,41 @@ def main():
 
     # ====== GUI Events ======#
     window = sg.Window("YouTube Downloader", layout, font="Arial 16", finalize=True, right_click_menu=MENU_RIGHT_CLICK)
-
+    
     # Event loop to process "events" and get the "values" of the inputs
     while True:
 
-        event, values = window.read(timeout=500)
-
+        event, values = window.read()
         # ----Closing the programm with either option [X] or just by pressing "Exit"----#
         if (event == sg.WIN_CLOSED or event == "-EXIT-"):
             break
-
+            
+        if event == "-CHECK_IF_FFMPEG_INSTALLED-":
+            result = os.system("ffmpeg -version")
+            if result == 0:
+                window["-OUTPUT_WINDOW-"].update("FFmpeg is installed.",text_color="#6dc151")
+            elif result == 1:
+                window["-OUTPUT_WINDOW-"].update("FFmpeg is not installed.",text_color="#db4e44") 
+            
         if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
-            if len(values["-SAVE_TO_FOLDER-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a path where to save the download.")
-            elif len(values["-LINK_INPUT-"]) == 0:
+            if len(values["-LINK_INPUT-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
                     "ERROR: Please enter a YouTube link for downloading.")
+            elif len(values["-SAVE_TO_FOLDER-"]) == 0:
+                window["-OUTPUT_WINDOW-"].update(
+                    "ERROR: Please enter a path where to save downloads.")
             else:
                 download_thread = threading.Thread(target=download_youtube_video, args=(
                     values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
                 download_thread.start()
 
         if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
-            if len(values["-SAVE_TO_FOLDER-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a path where to save the download.")
-            elif len(values["-LINK_INPUT-"]) == 0:
+            if len(values["-LINK_INPUT-"]) == 0:
                 window["-OUTPUT_WINDOW-"].update(
                     "ERROR: Please enter a YouTube link for downloading.")
+            elif len(values["-SAVE_TO_FOLDER-"]) == 0:
+                window["-OUTPUT_WINDOW-"].update(
+                    "ERROR: Please enter a path where to save downloads.")
             else:
                 download_thread = threading.Thread(target=download_youtube_audio, args=(
                     values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
