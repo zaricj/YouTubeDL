@@ -26,10 +26,6 @@ FFmpeg is mandatory: Without it, the program won't function as intended.
 Installation required: Download and install FFmpeg from its official website (https://ffmpeg.org/download.html).
 Add to Path for convenience: Configure your system's "Environment Path" to include the FFmpeg installation directory. This allows the program to easily find and use FFmpeg.
 
-#### Links to get FFmpeg:
-- Link to FFmpeg's Homepage: [FFmpeg](https://www.ffmpeg.org/)
-- Quick link to FFmpeg for Windows only: [FFmpeg For Windows](https://www.gyan.dev/ffmpeg/builds/)
-
 ### Usage
 #### How to use the Program step by step:
 1. Set Your Download Location
