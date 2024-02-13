@@ -1,0 +1,4 @@
+pyasn1==0.5.1
+PySimpleGUI==5.0.0
+pytube==15.0.0
+rsa==4.9

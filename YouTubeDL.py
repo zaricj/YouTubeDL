@@ -4,7 +4,6 @@ from pathlib import Path
 import threading
 import subprocess 
 import os
-import ffmpeg
 import re 
 import webbrowser
 import re
@@ -106,7 +105,6 @@ def main():
         except Exception as e:
             window["-OUTPUT_WINDOW-"].update("")
             window["-OUTPUT_WINDOW-"].print(f"ERROR: {e}")
-            window["-OUTPUT_WINDOW-"].print(ffmpeg)
             window["-BUTTON_DOWNLOAD-"].update(disabled=False)
             window["-STREAM_INFO_BUTTON-"].update(disabled=False)
             window["-PBAR-"].update(0)
@@ -289,8 +287,6 @@ def main():
                 )
         valid_youtube_url = re.match(validate_youtube_url, youtube_url)
         
-        result = subprocess.run(["ffmpeg", "-version"], capture_output=True) # Check if FFmpeg installed.
-        
         # ----Closing the programm with either option [X] or just by pressing "Exit"----#
         if (event == sg.WIN_CLOSED or event == "-EXIT-"):
             break
@@ -311,59 +307,72 @@ def main():
                 window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
             
         if event == "-CHECK_IF_FFMPEG_INSTALLED-":
-
-            if result.returncode == 0:
-                window["-OUTPUT_WINDOW-"].update("FFmpeg is installed.",text_color="#6dc151")
-            elif result.returncode == 1:
-                window["-OUTPUT_WINDOW-"].update("FFmpeg is not installed.",text_color="#db4e44")
+            try:
+                result = subprocess.run(["ffmpeg", "-version"], capture_output=True) # Check if FFmpeg installed.
+                if result.returncode == 0:
+                    window["-OUTPUT_WINDOW-"].update("FFmpeg is installed.",text_color="#6dc151")
+                elif result.returncode == 1:
+                    window["-OUTPUT_WINDOW-"].update("FFmpeg is not installed.",text_color="#db4e44")
+            except Exception as e:
+                window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
             
         if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
-            window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
-            if len(values["-LINK_INPUT-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a YouTube link for downloading.")
-            elif not valid_youtube_url:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
-            elif len(values["-SAVE_TO_FOLDER-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update(
-                    "ERROR: Please enter a path where to save downloads.")
-            elif valid_youtube_url:
-                download_thread = threading.Thread(target=download_youtube_video, args=(
-                    values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
-                download_thread.start()
+            try:
+                window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
+                if len(values["-LINK_INPUT-"]) == 0:
+                    window["-OUTPUT_WINDOW-"].update(
+                        "ERROR: Please enter a YouTube link for downloading.")
+                elif not valid_youtube_url:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
+                elif len(values["-SAVE_TO_FOLDER-"]) == 0:
+                    window["-OUTPUT_WINDOW-"].update(
+                        "ERROR: Please enter a path where to save downloads.")
+                elif valid_youtube_url:
+                    download_thread = threading.Thread(target=download_youtube_video, args=(values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
+                    download_thread.start()
+            except Exception as e:
+                window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
 
         if event == "-BUTTON_DOWNLOAD-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
-            window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
-            if len(values["-LINK_INPUT-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a YouTube link for downloading.")
-            elif not valid_youtube_url:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
-            elif len(values["-SAVE_TO_FOLDER-"]) == 0:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a path where to save downloads.")
-            elif valid_youtube_url:
-                download_thread = threading.Thread(target=download_youtube_audio, args=(
-                    values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
-                download_thread.start()
+            try:
+                window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
+                if len(values["-LINK_INPUT-"]) == 0:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a YouTube link for downloading.")
+                elif not valid_youtube_url:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
+                elif len(values["-SAVE_TO_FOLDER-"]) == 0:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Please enter a path where to save downloads.")
+                elif valid_youtube_url:
+                    download_thread = threading.Thread(target=download_youtube_audio, args=(values["-LINK_INPUT-"], values["-SAVE_TO_FOLDER-"], values["-QUALITY_FORMAT-"]))
+                    download_thread.start()
+            except Exception as e:
+                window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
                 
         if event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Video Format":
-            window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
-            if len(values["-LINK_INPUT-"]) == 0:
-              window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of audio stream because link input is empty.")  
-            elif not valid_youtube_url:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
-            elif valid_youtube_url:
-                get_audio_stream_thread = threading.Thread(target=video_stream, args=(values["-LINK_INPUT-"],))
-                get_audio_stream_thread.start()
+            try:
+                window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
+                if len(values["-LINK_INPUT-"]) == 0:
+                  window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of audio stream because link input is empty.")  
+                elif not valid_youtube_url:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
+                elif valid_youtube_url:
+                    get_audio_stream_thread = threading.Thread(target=video_stream, args=(values["-LINK_INPUT-"],))
+                    get_audio_stream_thread.start()
+            except Exception as e:
+                window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
         
         if event == "-STREAM_INFO_BUTTON-" and values["-DOWNLOAD_FORMAT-"] == "Audio Format":
-            window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
-            if len(values["-LINK_INPUT-"]) == 0:
-              window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of audio stream because link input is empty.")  
-            elif not valid_youtube_url:
-                window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
-            elif valid_youtube_url:
-                get_audio_stream_thread = threading.Thread(target=audio_stream, args=(values["-LINK_INPUT-"],))
-                get_audio_stream_thread.start()
+            try:
+                window["-OUTPUT_WINDOW-"].update(text_color="#d2d2d3")
+                if len(values["-LINK_INPUT-"]) == 0:
+                  window["-OUTPUT_WINDOW-"].update("ERROR: Cannot get info of audio stream because link input is empty.")  
+                elif not valid_youtube_url:
+                    window["-OUTPUT_WINDOW-"].update("ERROR: Not a valid YouTube URL.")
+                elif valid_youtube_url:
+                    get_audio_stream_thread = threading.Thread(target=audio_stream, args=(values["-LINK_INPUT-"],))
+                    get_audio_stream_thread.start()
+            except Exception as e:
+                window["-OUTPUT_WINDOW-"].update(f"ERROR: Something went wrong!\nError Message: {e}")
 
         if event == "-URL_REDIRECT-":
             url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-git-full.7z"
