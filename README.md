@@ -33,7 +33,7 @@ This downloader relies on FFmpeg for some key tasks like encoding audio and merg
 3. Find Your Desired Quality
   - Enter a valid YouTube video URL in the "URL Link" field and click the "Get Stream" button. This retrieves available qualities for the video or audio, based on your chosen format.
 4. Pick Your Quality
-  - Once the list populated, select the quality you prefer. For example, choose "1080" for a 1080p video or a high-quality audio bitrate for an audio download.
+  - Once the list is populated, select the quality you prefer. For example, choose 1080p for a high-quality video download if your Stream Format is "Video Format", for audio choose a audio quality with it's corresponding bitrate if your Stream Format is "Audio Format".
 5. Hit Download and Enjoy
   - Click the "Download" button and watch the magic happen! Your chosen video or audio file will be downloaded to your specified location.
 
@@ -41,7 +41,4 @@ This downloader relies on FFmpeg for some key tasks like encoding audio and merg
 - A listbox to add multiple Links to download and a '+ Button' to append URLs to the listbox.
 
 # Screenshot of Program
-![image](https://github.com/zaricj/YouTubeDL/assets/93329694/8bd2aa6f-a112-4a0c-b5d8-7691d8f9024b)
-
-# Screenshot of Program with Listbox function
-![python_rfzo2ZKTlC](https://github.com/zaricj/YouTubeDL/assets/93329694/fe3d4579-cd63-495a-bc42-3d0858c4dbf6)
+![python_roXopHoCK5](https://github.com/zaricj/YouTubeDL/assets/93329694/491c2cba-cab8-42ac-9531-e5638e6d4de7)
