@@ -9,7 +9,6 @@ This Python-based downloader utilizes the powerful PySimpleGUI library to provid
 - Seamless merging of audio and video streams
 - Optimized for downloading Adaptive Streams with separate audio/video
 
-
 ### Requirements
 - Python
 - FFmpeg
@@ -18,13 +17,11 @@ This Python-based downloader utilizes the powerful PySimpleGUI library to provid
 - webbrowser
 - pathlib
 
-### This downloader relies on FFmpeg for some key tasks like encoding audio and merging media files.
+### Important Information
+This downloader relies on FFmpeg for some key tasks like encoding audio and merging media files.
 
 Here's what you need to know:
-
-FFmpeg is mandatory: Without it, the program won't function as intended.
-Installation required: Download and install FFmpeg from its official website (https://ffmpeg.org/download.html).
-Add to Path for convenience: Configure your system's "Environment Path" to include the FFmpeg installation directory. This allows the program to easily find and use FFmpeg.
+- FFmpeg is mandatory: Without it, the program won't function as intended. Installation required: Download and install FFmpeg from its official website (https://ffmpeg.org/download.html). Add to Path for convenience: Configure your system's "Environment Path" to include the FFmpeg installation directory. This allows the program to easily find and use FFmpeg.
 
 ### Usage
 #### How to use the Program step by step:
@@ -40,7 +37,6 @@ Add to Path for convenience: Configure your system's "Environment Path" to inclu
   - Click the "Download" button and watch the magic happen! Your chosen video or audio file will be downloaded to your specified location.
 
 ### Functionality I want to add in the future:
-
 - A listbox to add multiple Links to download and a '+ Button' to append URLs to the listbox.
 
 # Screenshot of Program
