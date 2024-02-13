@@ -2,7 +2,7 @@
 ### Description
 This Python-based downloader utilizes the powerful PySimpleGUI library to provide a simple graphical interface. Download audio and videos from YouTube with ease! The pytube module handles efficient retrieval, while FFmpeg seamlessly converts downloaded audio files (typically .mp4 or .webm) to the popular .mp3 format. Additionally, the app merges audio and video back together, catering specifically to Adaptive Streams from YouTube. This allows you to download videos at your desired quality without sacrificing audio.
 
-K### ey Features:
+### Key Features:
 - Intuitive graphical interface powered by PySimpleGUI
 - Efficient downloads using pytube
 - Effortless audio conversion (.mp4/.webm to .mp3) with FFmpeg
