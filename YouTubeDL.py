@@ -13,12 +13,12 @@ def main():
 # Add the FFmpeg binary directory to the PATH 
     # current_working_path = os.path.dirname(os.path.abspath(__file__)) # Current working Directory
     # print(current_working_path)
-    # ffmpeg_path = "./ffmpeg/bin"
-    # if ffmpeg_path:
-    #     os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
-    # else:
-    #     print("No FFmpeg folder found")
-    #     pass
+    ffmpeg_path = "./_internal/ffmpeg/bin"
+    if ffmpeg_path:
+        os.environ["PATH"] += os.pathsep + os.path.abspath(ffmpeg_path)
+    else:
+        print("No FFmpeg folder found")
+        pass
 
     # ====== Functions ====== #
     def download_youtube_video(youtube_url, output_path, chosen_resolution):
